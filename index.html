@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Saori Interface</title>
+
+  <!-- Supabase setup -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://gyqzyuvuuyfjxnramkfq.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
+    );
+  </script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 {
+      margin-bottom: 1rem;
+    }
+    textarea, button, select {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #chatLog {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      white-space: pre-wrap;
+      overflow-y: auto;
+      max-height: 400px;
+    }
+    .user {
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+    .saori {
+      margin-bottom: 1rem;
+    }
+    #loginButton {
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h2>Speak to Saori</h2>
+
+  <div id="loginButton">
+    <button onclick="loginWithGoogle()">Login with Google</button>
+  </div>
+
+  <div id="saoriInterface" style="display:none;">
+    <select id="mode">
+      <option value="quick">Quick Response</option>
+      <option value="deep">Think Deeper</option>
+      <option value="smart">Smart (GPT-5)</option>
+      <option value="research">Deep Research</option>
+    </select>
+
+    <textarea id="userInput" rows="4" placeholder="Type your message..."></textarea>
+    <button onclick="sendToSaori()">Submit</button>
+    <div id="chatLog"></div>
+  </div>
+
+  <script>
+    async function loginWithGoogle() {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://taurinrobinson-wq.github.io'
+        }
+      });
+      if (error) console.error('Login error:', error.message);
+    }
+
+    async function checkSession() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('Session:', session);
+      if (session) {
+        document.getElementById('saoriInterface').style.display = 'block';
+        document.getElementById('loginButton').style.display = 'none';
+      } else {
+        document.getElementById('saoriInterface').style.display = 'none';
+        document.getElementById('loginButton').style.display = 'block';
+      }
+    }
+
+    window.addEventListener('load', async () => {
+      await checkSession();
+    });
+
+    async function sendToSaori() {
+      const inputEl = document.getElementById('userInput');
+      const modeEl = document.getElementById('mode');
+      const message = inputEl.value.trim();
+      const mode = modeEl.value;
+
+      if (!message) return;
+
+      const chatLog = document.getElementById('chatLog');
+
+      const userMsg = document.createElement('div');
+      userMsg.className = 'user';
+      userMsg.textContent = `You (${mode}): ${message}`;
+      chatLog.appendChild(userMsg);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      try {
+        const res = await fetch('https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/saori', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ message, mode })
+        });
+
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+        const data = await res.json();
+
+        const saoriMsg = document.createElement('div');
+        saoriMsg.className = 'saori';
+        saoriMsg.textContent = `Saori: ${data.saoriResponse || 'No response received.'}`;
+        chatLog.appendChild(saoriMsg);
+
+        inputEl.value = '';
+        chatLog.scrollTop = chatLog.scrollHeight;
+      } catch (error) {
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'saori';
+        errorMsg.textContent = 'Saori could not be reached.';
+        chatLog.appendChild(errorMsg);
+        console.error('Error:', error);
+      }
+    }
+
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendToSaori();
+      }
+    });
+  </script>
+</body>
+</html>
