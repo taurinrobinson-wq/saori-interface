@@ -96,11 +96,10 @@
       }
     }
 
-    // Hydrate session after redirect and clean up URL
     window.addEventListener('load', async () => {
       const hash = window.location.hash;
 
-      if (hash && hash.includes('access_token')) {
+      if (hash.includes('access_token')) {
         const params = new URLSearchParams(hash.slice(1));
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
