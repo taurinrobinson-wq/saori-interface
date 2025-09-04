@@ -76,7 +76,10 @@
   <script>
     async function loginWithGoogle() {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google'
+        provider: 'google',
+        options: {
+          redirectTo: 'https://taurinrobinson-wq.github.io'
+        }
       });
       if (error) console.error('Login error:', error.message);
     }
@@ -95,12 +98,24 @@
 
     // Hydrate session after redirect and clean up URL
     window.addEventListener('load', async () => {
-      await supabase.auth.getSession();
-      checkSession();
+      const hash = window.location.hash;
 
-      if (window.location.hash) {
+      if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.slice(1));
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({
+            access_token,
+            refresh_token
+          });
+        }
+
         history.replaceState(null, '', window.location.pathname);
       }
+
+      checkSession();
     });
 
     async function sendToSaori() {
