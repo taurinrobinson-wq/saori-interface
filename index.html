@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Saori Interface</title>
-
-  <!-- Supabase setup -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
     const supabase = window.supabase.createClient(
@@ -12,7 +10,6 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
     );
   </script>
-
   <style>
     body {
       font-family: sans-serif;
@@ -78,14 +75,14 @@
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://taurinrobinson-wq.github.io'
+          redirectTo: 'https://taurinrobinson-wq.github.io/saori-interface'
         }
       });
       if (error) console.error('Login error:', error.message);
     }
 
     async function checkSession() {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       console.log('Session:', session);
       if (session) {
         document.getElementById('saoriInterface').style.display = 'block';
