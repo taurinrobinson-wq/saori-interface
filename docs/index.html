@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Speak to Saori</title>
+  <title>Saori Interface</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body {
@@ -15,7 +15,7 @@
     h2 {
       margin-bottom: 1rem;
     }
-    textarea, button {
+    textarea, button, select {
       padding: 0.5rem;
       font-size: 1rem;
       margin-top: 0.5rem;
@@ -52,6 +52,13 @@
   </div>
 
   <div id="saoriInterface" style="display:none;">
+    <select id="mode">
+      <option value="quick">Quick Response</option>
+      <option value="deep">Think Deeper</option>
+      <option value="smart">Smart (GPT-5)</option>
+      <option value="research">Deep Research</option>
+    </select>
+
     <textarea id="userInput" rows="4" placeholder="Type your message..."></textarea>
     <button onclick="sendToSaori()">Submit</button>
     <div id="chatLog"></div>
@@ -60,7 +67,7 @@
   <script>
     const supabase = supabase.createClient(
       'https://gyqzyuvuuyfjxnramkfq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8' // ← Replace this with your actual anon key from Supabase
+      'YOUR_PUBLIC_ANON_KEY' // ← Replace with your actual anon key
     );
 
     async function loginWithGoogle() {
@@ -86,7 +93,10 @@
 
     async function sendToSaori() {
       const inputEl = document.getElementById('userInput');
+      const modeEl = document.getElementById('mode');
       const message = inputEl.value.trim();
+      const mode = modeEl.value;
+
       if (!message) return;
 
       const chatLog = document.getElementById('chatLog');
@@ -94,7 +104,7 @@
       // Append user message
       const userMsg = document.createElement('div');
       userMsg.className = 'user';
-      userMsg.textContent = `You: ${message}`;
+      userMsg.textContent = `You (${mode}): ${message}`;
       chatLog.appendChild(userMsg);
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -107,7 +117,7 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ message, mode })
         });
 
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -141,4 +151,5 @@
   </script>
 </body>
 </html>
+
 
