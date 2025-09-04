@@ -5,10 +5,10 @@
   <title>Saori Interface</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-const supabase = window.supabase.createClient(
-  'https://gyqzyuvuuyfjxnramkfq.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
-);
+    const supabase = window.supabase.createClient(
+      'https://gyqzyuvuuyfjxnramkfq.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
+    );
   </script>
   <style>
     body {
@@ -162,7 +162,7 @@ const supabase = window.supabase.createClient(
       console.log('Using token:', token);
 
       try {
-     const res = await fetch('https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/index', {
+        const res = await fetch('https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/index', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
