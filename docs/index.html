@@ -9,7 +9,7 @@
   <script>
     const supabase = window.supabase.createClient(
       'https://gyqzyuvuuyfjxnramkfq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8' // ← Replace with your actual anon key from Supabase
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
     );
   </script>
 
@@ -93,7 +93,15 @@
       }
     }
 
-    checkSession();
+    // Hydrate session after redirect and clean up URL
+    window.addEventListener('load', async () => {
+      await supabase.auth.getSession();
+      checkSession();
+
+      if (window.location.hash) {
+        history.replaceState(null, '', window.location.pathname);
+      }
+    });
 
     async function sendToSaori() {
       const inputEl = document.getElementById('userInput');
@@ -105,7 +113,6 @@
 
       const chatLog = document.getElementById('chatLog');
 
-      // Append user message
       const userMsg = document.createElement('div');
       userMsg.className = 'user';
       userMsg.textContent = `You (${mode}): ${message}`;
@@ -128,14 +135,13 @@
 
         const data = await res.json();
 
-        // Append Saori's response
         const saoriMsg = document.createElement('div');
         saoriMsg.className = 'saori';
         saoriMsg.textContent = `Saori: ${data.saoriResponse || 'No response received.'}`;
         chatLog.appendChild(saoriMsg);
 
-        inputEl.value = ''; // Clear input
-        chatLog.scrollTop = chatLog.scrollHeight; // Scroll to bottom
+        inputEl.value = '';
+        chatLog.scrollTop = chatLog.scrollHeight;
       } catch (error) {
         const errorMsg = document.createElement('div');
         errorMsg.className = 'saori';
@@ -145,7 +151,6 @@
       }
     }
 
-    // Allow Enter to submit, Shift+Enter for newline
     document.getElementById('userInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -155,5 +160,3 @@
   </script>
 </body>
 </html>
-
-
