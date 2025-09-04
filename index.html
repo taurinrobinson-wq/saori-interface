@@ -48,10 +48,16 @@
     #loginButton {
       margin-bottom: 1rem;
     }
+    #status {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
   <h2>Speak to Saori</h2>
+  <div id="status">Checking login status...</div>
 
   <div id="loginButton">
     <button onclick="loginWithGoogle()">Login with Google</button>
@@ -84,12 +90,18 @@
     async function checkSession() {
       const { data: { session }, error } = await supabase.auth.getSession();
       console.log('Session:', session);
+      console.log('Error:', error);
+
+      const statusEl = document.getElementById('status');
+
       if (session) {
         document.getElementById('saoriInterface').style.display = 'block';
         document.getElementById('loginButton').style.display = 'none';
+        statusEl.textContent = `Logged in as ${session.user.email}`;
       } else {
         document.getElementById('saoriInterface').style.display = 'none';
         document.getElementById('loginButton').style.display = 'block';
+        statusEl.textContent = 'Not logged in.';
       }
     }
 
@@ -100,6 +112,9 @@
         const params = new URLSearchParams(hash.slice(1));
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
+
+        console.log('Access token:', access_token);
+        console.log('Refresh token:', refresh_token);
 
         if (access_token && refresh_token) {
           await supabase.auth.setSession({
