@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Saori’s Glyph Trail</title>
+  <title>Saori Interface</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -17,6 +17,36 @@
       font-size: 2rem;
       margin-bottom: 1.5rem;
       color: #ffd700;
+    }
+    form {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 4px;
+      border: none;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.75rem 1rem;
+      background-color: #6a5acd;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .response {
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+      color: #e0e0e0;
+      background: #1a1a1a;
+      padding: 1rem;
+      border-left: 4px solid #ffd700;
+      border-radius: 6px;
     }
     .log {
       background: #1a1a1a;
@@ -41,7 +71,7 @@
       color: #ccc;
       margin-bottom: 0.5rem;
     }
-    .response {
+    .log-response {
       margin-top: 0.5rem;
       color: #e0e0e0;
     }
@@ -53,7 +83,16 @@
   </style>
 </head>
 <body>
-  <h1>Saori’s Glyph Trail</h1>
+  <h1>Saori Interface</h1>
+
+  <form id="chat-form">
+    <input type="text" id="message" placeholder="Speak to Saori..." required />
+    <button type="submit">Send</button>
+  </form>
+
+  <div id="saori-response" class="response" style="display: none;"></div>
+
+  <h2>Saori’s Glyph Trail</h2>
   <div id="logs">Loading glyphs...</div>
 
   <script type="module">
@@ -63,6 +102,39 @@
       'https://gyqzyuvuuyfjxnramkfq.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8' // 🔑 Replace with your actual anon key
     );
+
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message');
+    const responseDiv = document.getElementById('saori-response');
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      responseDiv.style.display = 'none';
+      responseDiv.textContent = 'Saori is listening...';
+
+      try {
+        const res = await fetch('https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/saori', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message, mode: 'quick' })
+        });
+
+        const data = await res.json();
+        responseDiv.textContent = data.reply ?? 'No response received.';
+        responseDiv.style.display = 'block';
+        messageInput.value = '';
+        fetchLogs(); // Refresh glyph trail
+      } catch (err) {
+        responseDiv.textContent = 'Error communicating with Saori.';
+        responseDiv.style.display = 'block';
+        console.error(err);
+      }
+    });
 
     async function fetchLogs() {
       const { data, error } = await supabase
@@ -92,7 +164,7 @@
           <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
           <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
           <div class="prompt">🧭 Prompt: ${log.system_prompt}</div>
-          <div class="response">💬 Response: ${log.response}</div>
+          <div class="log-response">💬 Response: ${log.response}</div>
         `;
         container.appendChild(div);
       });
