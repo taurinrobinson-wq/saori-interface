@@ -1,15 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Saori Interface</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script>
-    const supabase = window.supabase.createClient(
-      'https://gyqzyuvuuyfjxnramkfq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
-    );
-  </script>
   <style>
     body {
       font-family: sans-serif;
@@ -45,9 +39,6 @@
     .saori {
       margin-bottom: 1rem;
     }
-    #loginButton, #logoutButton {
-      margin-bottom: 1rem;
-    }
     #status {
       font-size: 0.9rem;
       color: #666;
@@ -77,10 +68,16 @@
 
     <textarea id="userInput" rows="4" placeholder="Type your message..."></textarea>
     <button onclick="sendToSaori()">Submit</button>
+
     <div id="chatLog"></div>
   </div>
 
   <script>
+    const supabase = window.supabase.createClient(
+      'https://gyqzyuvuuyfjxnramkfq.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
+    );
+
     async function loginWithGoogle() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -101,11 +98,7 @@
 
     async function checkSession() {
       const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('Session:', session);
-      console.log('Error:', error);
-
       const statusEl = document.getElementById('status');
-
       if (session) {
         document.getElementById('saoriInterface').style.display = 'block';
         document.getElementById('loginButton').style.display = 'none';
@@ -121,25 +114,16 @@
 
     window.addEventListener('load', async () => {
       const hash = window.location.hash;
-
       if (hash.includes('access_token')) {
         const params = new URLSearchParams(hash.slice(1));
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
-
         if (access_token && refresh_token) {
-          await supabase.auth.setSession({
-            access_token,
-            refresh_token
-          });
+          await supabase.auth.setSession({ access_token, refresh_token });
         }
-
         history.replaceState(null, '', window.location.pathname);
       }
-
-      setTimeout(() => {
-        checkSession();
-      }, 500);
+      await checkSession();
     });
 
     async function sendToSaori() {
@@ -147,11 +131,9 @@
       const modeEl = document.getElementById('mode');
       const message = inputEl.value.trim();
       const mode = modeEl.value;
-
       if (!message) return;
 
       const chatLog = document.getElementById('chatLog');
-
       const userMsg = document.createElement('div');
       userMsg.className = 'user';
       userMsg.textContent = `You (${mode}): ${message}`;
@@ -159,34 +141,23 @@
 
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
-
-      console.log('Using token:', token);
 
       try {
         const res = await fetch('https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/saori', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    'apikey': anonKey
-  },
-  body: JSON.stringify({ message, mode })
-});
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ message, mode })
+        });
 
-        console.log('Response status:', res.status);
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`Saori failed with status ${res.status}: ${errorText}`);
-        }
-
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         const data = await res.json();
-        console.log('Saori response:', data);
 
         const saoriMsg = document.createElement('div');
         saoriMsg.className = 'saori';
-        saoriMsg.textContent = `Saori: ${data.saoriResponse || 'No response received.'}`;
+        saoriMsg.textContent = `Saori: ${data.reply || 'No response received.'}`;
         chatLog.appendChild(saoriMsg);
 
         inputEl.value = '';
@@ -196,7 +167,7 @@
         errorMsg.className = 'saori';
         errorMsg.textContent = 'Saori could not be reached.';
         chatLog.appendChild(errorMsg);
-        console.error('Fetch error:', error);
+        console.error('Error:', error);
       }
     }
 
