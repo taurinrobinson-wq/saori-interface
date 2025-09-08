@@ -1,18 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Saori Interface</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0e0e0e;
-      color: #e0e0e0;
-      padding: 2rem;
-      max-width: 800px;
-      margin: auto;
-    }<!DOCTYPE html>
 <html lang=
 "en"
 >
@@ -26,17 +12,208 @@
  content=
 "width=device-width, initial-scale=1"
  />
-  <!-- Same CSS 
-as
- before -->
   <style>
-    
-/* Your existing styles */
+    body {
+      font-family: 
+'Segoe UI'
+, sans-serif;
+      background: 
+#0e0e0e;
 
+      color: 
+#e0e0e0;
+
+      padding: 
+2
+rem;
+      max-width: 
+800
+px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 
+2
+rem;
+      margin-bottom: 
+1.5
+rem;
+      color: 
+#ffd700;
+
+    }
+    form {
+      display: flex;
+      gap: 
+1
+rem;
+      margin-bottom: 
+2
+rem;
+    }
+    input[type=
+"text"
+] {
+      flex: 
+1
+;
+      padding: 
+0.75
+rem;
+      border-radius: 
+4
+px;
+      border: none;
+      font-size: 
+1
+rem;
+    }
+    button {
+      padding: 
+0.75
+rem 
+1
+rem;
+      background-color: 
+#6a5acd;
+
+      color: white;
+      border: none;
+      border-radius: 
+4
+px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .response {
+      margin-bottom: 
+2
+rem;
+      font-size: 
+1.1
+rem;
+      color: 
+#e0e0e0;
+
+      background: 
+#1a1a1a;
+
+      padding: 
+1
+rem;
+      border-left: 
+4
+px solid 
+#ffd700;
+
+      border-radius: 
+6
+px;
+    }
+    .log {
+      background: 
+#1a1a1a;
+
+      border-left: 
+4
+px solid 
+#6a5acd;
+
+      padding: 
+1
+rem;
+      margin-bottom: 
+1.5
+rem;
+      border-radius: 
+6
+px;
+      box-shadow: 
+0
+ 
+0
+ 
+10
+px 
+rgba
+(
+106
+, 
+90
+, 
+205
+, 
+0.3
+)
+;
+    }
+    .timestamp {
+      font-size: 
+0.8
+rem;
+      color: 
+#aaa;
+
+      margin-bottom: 
+0.5
+rem;
+    }
+    .glyph {
+      font-weight: bold;
+      color: 
+#ffd700;
+
+      margin-bottom: 
+0.3
+rem;
+    }
+    .prompt {
+      font-style: italic;
+      color: 
+#ccc;
+
+      margin-bottom: 
+0.5
+rem;
+    }
+    .log-response {
+      margin-top: 
+0.5
+rem;
+      color: 
+#e0e0e0;
+
+    }
+    .error {
+      color: 
+#ff4c4c;
+
+      font-weight: bold;
+      margin-top: 
+2
+rem;
+    }
+    .status {
+      color: 
+#4cff4c;
+
+      margin-bottom: 
+1
+rem;
+    }
   </style>
 </head>
 <body>
   <h1>Saori Interface</h1>
+  <div id=
+"status"
+ 
+class
+=
+"status"
+>Initializing Saori 
+interface
+...</div>
   <form id=
 "chat-form"
 >
@@ -83,6 +260,11 @@ const
  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
 const
+ statusDiv = document.getElementById(
+'status'
+);
+    
+const
  chatForm = document.getElementById(
 'chat-form'
 );
@@ -96,6 +278,64 @@ const
  responseDiv = document.getElementById(
 'saori-response'
 );
+    
+// Optional: Sign in anonymously to get a session
+
+    
+async
+ function 
+initializeAnonymousSession
+(
+)
+ {
+      
+try
+ {
+        statusDiv.textContent = 
+"Initializing anonymous session..."
+;
+        
+const
+ { data, error } = 
+await
+ supabase.auth.signInAnonymously();
+        
+if
+ (error) {
+          console.error(
+"Anonymous sign-in error:"
+, error.message);
+          statusDiv.textContent = 
+"Warning: Running in limited mode (no authentication)"
+;
+          
+return
+ 
+false
+;
+        }
+        statusDiv.textContent = 
+"Saori is ready"
+;
+        
+return
+ 
+true
+;
+      } catch (err) {
+        console.error(
+"Session initialization error:"
+, err);
+        statusDiv.textContent = 
+"Warning: Running in limited mode (no authentication)"
+;
+        
+return
+ 
+false
+;
+      }
+    }
     chatForm.addEventListener(
 'submit'
 , 
@@ -122,17 +362,22 @@ return
 'block'
 ;
       
+// Try multiple approaches to communicate with Saori
+
+      
+let
+ success = 
+false
+;
+      
+// Approach 1: Try using the Supabase client functions.invoke method (for authenticated calls)
+
+      
 try
  {
         
-// First approach: Use a signed function URL with service role (for development only)
-
-        
-// Get function URL with JWT
-
-        
 const
- { data: { signedURL }, error: urlError } = 
+ { data, error } = 
 await
  supabase.functions.invoke(
 'saori'
@@ -143,22 +388,11 @@ await
         });
         
 if
- (urlError) {
-          console.error(
-'Error getting signed function URL:'
-, urlError);
-          responseDiv.textContent = 
-'Error communicating with Saori.'
-;
-          
-return
-;
-        }
-        
-const
- data = 
-await
- signedURL.json();
+ (error) 
+throw
+ 
+new
+ Error(error.message);
         responseDiv.textContent = data.reply ?? 
 'No response received.'
 ;
@@ -167,13 +401,97 @@ value
  = 
 ''
 ;
-        fetchLogs(); 
-// Refresh glyph trail
-
+        fetchLogs();
+        success = 
+true
+;
       } catch (err) {
-        
-// Alternative approach: Try the second function if auth fails
+        console.warn(
+"Approach 1 failed:"
+, err.message);
+      }
+      
+// Approach 2: Try direct fetch with session token
 
+      
+if
+ (!success) {
+        
+try
+ {
+          
+// Get the session to use its JWT token
+
+          
+const
+ { data: { session } } = 
+await
+ supabase.auth.getSession();
+          
+const
+ token = session?.access_token;
+          
+const
+ res = 
+await
+ fetch(`${SUPABASE_URL}/functions/v1/saori`, {
+            method: 
+'POST'
+,
+            headers: {
+              
+'Content-Type'
+: 
+'application/json'
+,
+              
+'Authorization'
+: token ? `Bearer ${token}` : 
+''
+
+            },
+            body: JSON.stringify({ message, mode: 
+'quick'
+ })
+          });
+          
+if
+ (!res.ok) {
+            
+throw
+ 
+new
+ Error(`HTTP error: ${res.status}`);
+          }
+          
+const
+ data = 
+await
+ res.json();
+          responseDiv.textContent = data.reply ?? 
+'No response received.'
+;
+          messageInput.
+value
+ = 
+''
+;
+          fetchLogs();
+          success = 
+true
+;
+        } catch (err) {
+          console.warn(
+"Approach 2 failed:"
+, err.message);
+        }
+      }
+      
+// Approach 3: Try direct fetch without authentication (fallback)
+
+      
+if
+ (!success) {
         
 try
  {
@@ -181,9 +499,9 @@ try
 const
  res = 
 await
- fetch(
-'https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/saori-public'
-, {
+ fetch(`${SUPABASE_URL}/functions/v1/saori-
+public
+`, {
             method: 
 'POST'
 ,
@@ -220,20 +538,22 @@ value
  = 
 ''
 ;
-          fetchLogs(); 
-// Refresh glyph trail
-
-        } catch (fallbackErr) {
-          responseDiv.textContent = 
-'Error communicating with Saori.'
+          fetchLogs();
+          success = 
+true
 ;
-          console.error(
-'Original error:'
-, err);
-          console.error(
-'Fallback error:'
-, fallbackErr);
+        } catch (err) {
+          console.warn(
+"Approach 3 failed:"
+, err.message);
         }
+      }
+      
+if
+ (!success) {
+        responseDiv.textContent = 
+'Unable to communicate with Saori. Check console for details.'
+;
       }
     });
     
@@ -335,183 +655,48 @@ class
 class
 =
 "prompt"
->🧭 User: ${log.input_message}</div>
+>🧭 User: ${escapeHTML(log.input_message)}</div>
           <div 
 class
 =
 "prompt"
->🧠 Prompt: ${log.system_prompt}</div>
+>🧠 Prompt: ${escapeHTML(log.system_prompt)}</div>
           <div 
 class
 =
 "log-response"
->💬 Response: ${log.response}</div>
+>💬 Response: ${escapeHTML(log.response)}</div>
         `;
         container.appendChild(div);
       });
     }
-    fetchLogs();
-  </script>
-</body>
-</html>
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      color: #ffd700;
+    
+function 
+escapeHTML
+(
+str
+)
+ {
+      
+return
+ str
+        .replace(/&/g, 
+'&amp;'
+)
+        .replace(/</g, 
+'&lt;'
+)
+        .replace(/>/g, 
+'&gt;'
+)
+        .replace(/
+"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
-    form {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    input[type="text"] {
-      flex: 1;
-      padding: 0.75rem;
-      border-radius: 4px;
-      border: none;
-      font-size: 1rem;
-    }
-    button {
-      padding: 0.75rem 1rem;
-      background-color: #6a5acd;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .response {
-      margin-bottom: 2rem;
-      font-size: 1.1rem;
-      color: #e0e0e0;
-      background: #1a1a1a;
-      padding: 1rem;
-      border-left: 4px solid #ffd700;
-      border-radius: 6px;
-    }
-    .log {
-      background: #1a1a1a;
-      border-left: 4px solid #6a5acd;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      border-radius: 6px;
-      box-shadow: 0 0 10px rgba(106, 90, 205, 0.3);
-    }
-    .timestamp {
-      font-size: 0.8rem;
-      color: #aaa;
-      margin-bottom: 0.5rem;
-    }
-    .glyph {
-      font-weight: bold;
-      color: #ffd700;
-      margin-bottom: 0.3rem;
-    }
-    .prompt {
-      font-style: italic;
-      color: #ccc;
-      margin-bottom: 0.5rem;
-    }
-    .log-response {
-      margin-top: 0.5rem;
-      color: #e0e0e0;
-    }
-    .error {
-      color: #ff4c4c;
-      font-weight: bold;
-      margin-top: 2rem;
-    }
-  </style>
-</head>
-<body>
-  <h1>Saori Interface</h1>
-
-  <form id="chat-form">
-    <input type="text" id="message" placeholder="Speak to Saori..." required />
-    <button type="submit">Send</button>
-  </form>
-
-  <div id="saori-response" class="response" style="display: none;"></div>
-
-  <h2>Saori’s Glyph Trail</h2>
-  <div id="logs">Loading glyphs...</div>
-
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-    const supabase = createClient(
-      'https://gyqzyuvuuyfjxnramkfq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8' // 🔑 Replace with your actual anon key
-    );
-
-    const chatForm = document.getElementById('chat-form');
-    const messageInput = document.getElementById('message');
-    const responseDiv = document.getElementById('saori-response');
-
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const message = messageInput.value.trim();
-      if (!message) return;
-
-      responseDiv.style.display = 'none';
-      responseDiv.textContent = 'Saori is listening...';
-
-      try {
-        const res = await fetch('https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/saori', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ message, mode: 'quick' })
-        });
-
-        const data = await res.json();
-        responseDiv.textContent = data.reply ?? 'No response received.';
-        responseDiv.style.display = 'block';
-        messageInput.value = '';
-        fetchLogs(); // Refresh glyph trail
-      } catch (err) {
-        responseDiv.textContent = 'Error communicating with Saori.';
-        responseDiv.style.display = 'block';
-        console.error(err);
-      }
+    // Initialize the page
+    initializeAnonymousSession().then(() => {
+      fetchLogs();
     });
-
-    async function fetchLogs() {
-      const { data, error } = await supabase
-        .from('glyph_logs')
-        .select('input_message, matched_glyph_id, system_prompt, response, timestamp')
-        .order('timestamp', { ascending: false })
-        .limit(10);
-
-      const container = document.getElementById('logs');
-      container.innerHTML = '';
-
-      if (error) {
-        console.error('Error fetching logs:', error);
-        container.innerHTML = `<div class="error">Failed to load glyph logs. Check Supabase permissions.</div>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
-        return;
-      }
-
-      data.forEach(log => {
-        const div = document.createElement('div');
-        div.className = 'log';
-        div.innerHTML = `
-          <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
-          <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
-          <div class="prompt">🧭 Prompt: ${log.system_prompt}</div>
-          <div class="log-response">💬 Response: ${log.response}</div>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    fetchLogs();
   </script>
 </body>
 </html>
