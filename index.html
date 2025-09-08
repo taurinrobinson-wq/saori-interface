@@ -2,53 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Saori Glyph Logs</title>
+  <title>Saori’s Glyph Trail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #0e0e0e;
       color: #e0e0e0;
       padding: 2rem;
+      max-width: 800px;
+      margin: auto;
     }
     h1 {
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: #ffd700;
     }
     .log {
       background: #1a1a1a;
       border-left: 4px solid #6a5acd;
       padding: 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
       border-radius: 6px;
+      box-shadow: 0 0 10px rgba(106, 90, 205, 0.3);
     }
-    .log .timestamp {
+    .timestamp {
       font-size: 0.8rem;
       color: #aaa;
+      margin-bottom: 0.5rem;
     }
-    .log .glyph {
+    .glyph {
       font-weight: bold;
       color: #ffd700;
+      margin-bottom: 0.3rem;
     }
-    .log .prompt {
+    .prompt {
       font-style: italic;
       color: #ccc;
+      margin-bottom: 0.5rem;
     }
-    .log .response {
+    .response {
       margin-top: 0.5rem;
       color: #e0e0e0;
+    }
+    .error {
+      color: #ff4c4c;
+      font-weight: bold;
+      margin-top: 2rem;
     }
   </style>
 </head>
 <body>
   <h1>Saori’s Glyph Trail</h1>
-  <div id="logs"></div>
+  <div id="logs">Loading glyphs...</div>
 
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
     const supabase = createClient(
       'https://gyqzyuvuuyfjxnramkfq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8' // Replace with your anon key
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8' // 🔑 Replace with your actual anon key
     );
 
     async function fetchLogs() {
@@ -58,13 +71,19 @@
         .order('timestamp', { ascending: false })
         .limit(10);
 
+      const container = document.getElementById('logs');
+      container.innerHTML = '';
+
       if (error) {
         console.error('Error fetching logs:', error);
+        container.innerHTML = `<div class="error">Failed to load glyph logs. Check Supabase permissions.</div>`;
         return;
       }
 
-      const container = document.getElementById('logs');
-      container.innerHTML = '';
+      if (!data || data.length === 0) {
+        container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
+        return;
+      }
 
       data.forEach(log => {
         const div = document.createElement('div');
