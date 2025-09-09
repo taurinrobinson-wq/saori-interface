@@ -114,23 +114,7 @@
   const messageInput = document.getElementById('message');
   const responseDiv = document.getElementById('saori-response');
 
-  async function initializeAnonymousSession() {
-    try {
-      statusDiv.textContent = 'Initializing anonymous session...';
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) {
-        console.warn('Anonymous sign-in error:', error.message);
-        statusDiv.textContent = 'Ready (no auth)';
-        return false;
-      }
-      statusDiv.textContent = 'Saori is ready';
-      return true;
-    } catch (err) {
-      console.warn('Session initialization error:', err);
-      statusDiv.textContent = 'Ready (no auth)';
-      return false;
-    }
-  }
+  
 
   chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -142,7 +126,7 @@
     responseDiv.style.display = 'block';
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-public`, {
+     const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-fixed`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -209,7 +193,8 @@
       .replace(/'/g, '&#039;');
   }
 
-  initializeAnonymousSession().then(fetchLogs);
+  statusDiv.textContent = 'Saori is ready';
+fetchLogs();
 </script>
 </body>
 </html>
