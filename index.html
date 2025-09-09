@@ -101,172 +101,115 @@
   <h2>Saori's Glyph Trail</h2>
   <div id="logs">Loading glyphs...</div>
 
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-    const SUPABASE_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
+  const SUPABASE_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    const statusDiv = document.getElementById('status');
-    const chatForm = document.getElementById('chat-form');
-    const messageInput = document.getElementById('message');
-    const responseDiv = document.getElementById('saori-response');
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Optional: Sign in anonymously to get a session
-    async function initializeAnonymousSession() {
-      try {
-        statusDiv.textContent = "Initializing anonymous session...";
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (error) {
-          console.error("Anonymous sign-in error:", error.message);
-          statusDiv.textContent = "Warning: Running in limited mode (no authentication)";
-          return false;
-        }
-        statusDiv.textContent = "Saori is ready";
-        return true;
-      } catch (err) {
-        console.error("Session initialization error:", err);
-        statusDiv.textContent = "Warning: Running in limited mode (no authentication)";
+  const statusDiv = document.getElementById('status');
+  const chatForm = document.getElementById('chat-form');
+  const messageInput = document.getElementById('message');
+  const responseDiv = document.getElementById('saori-response');
+
+  async function initializeAnonymousSession() {
+    try {
+      statusDiv.textContent = 'Initializing anonymous session...';
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        console.warn('Anonymous sign-in error:', error.message);
+        statusDiv.textContent = 'Ready (no auth)';
         return false;
       }
+      statusDiv.textContent = 'Saori is ready';
+      return true;
+    } catch (err) {
+      console.warn('Session initialization error:', err);
+      statusDiv.textContent = 'Ready (no auth)';
+      return false;
     }
+  }
 
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const message = messageInput.value.trim();
-      if (!message) return;
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = messageInput.value.trim();
+    if (!message) return;
 
-      responseDiv.style.display = 'none';
-      responseDiv.textContent = 'Saori is listening...';
-      responseDiv.style.display = 'block';
-      
-      // Try multiple approaches to communicate with Saori
-      let success = false;
+    responseDiv.style.display = 'none';
+    responseDiv.textContent = 'Saori is listening...';
+    responseDiv.style.display = 'block';
 
-      // Approach 1: Direct fetch with session token
-      try {
-        // Get the session to use its JWT token
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/saori`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
-          },
-          body: JSON.stringify({ message, mode: 'quick' })
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP error: ${res.status}`);
-        }
-
-        const data = await res.json();
-        responseDiv.textContent = data.reply ?? 'No response received.';
-        messageInput.value = '';
-        fetchLogs();
-        success = true;
-      } catch (err) {
-        console.warn("Approach 1 failed:", err.message);
-      }
-
-      // Approach 2: Try using the Supabase client functions.invoke method
-      if (!success) {
-        try {
-          const { data, error } = await supabase.functions.invoke('saori', {
-            body: { message, mode: 'quick' }
-          });
-          
-          if (error) throw new Error(error.message);
-          
-          responseDiv.textContent = data.reply ?? 'No response received.';
-          messageInput.value = '';
-          fetchLogs();
-          success = true;
-        } catch (err) {
-          console.warn("Approach 2 failed:", err.message);
-        }
-      }
-
-      // Approach 3: Try direct fetch without authentication (fallback)
-      if (!success) {
-        try {
-          const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-public`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ message, mode: 'quick' })
-          });
-
-          if (!res.ok) {
-            throw new Error(`HTTP error: ${res.status}`);
-          }
-
-          const data = await res.json();
-          responseDiv.textContent = data.reply ?? 'No response received.';
-          messageInput.value = '';
-          fetchLogs();
-          success = true;
-        } catch (err) {
-          console.warn("Approach 3 failed:", err.message);
-          responseDiv.textContent = `Error: ${err.message}. Please check console for details.`;
-        }
-      }
-    });
-
-    async function fetchLogs() {
-      const { data, error } = await supabase
-        .from('glyph_logs')
-        .select('input_message, matched_glyph_id, system_prompt, response, timestamp')
-        .order('timestamp', { ascending: false })
-        .limit(10);
-
-      const container = document.getElementById('logs');
-      container.innerHTML = '';
-
-      if (error) {
-        console.error('Error fetching logs:', error);
-        container.innerHTML = `<div class="error">Failed to load glyph logs. Check console for details.</div>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
-        return;
-      }
-
-      data.forEach(log => {
-        const div = document.createElement('div');
-        div.className = 'log';
-        div.innerHTML = `
-          <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
-          <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
-          <div class="prompt">🧭 User: ${escapeHTML(log.input_message)}</div>
-          <div class="prompt">🧠 Prompt: ${escapeHTML(log.system_prompt)}</div>
-          <div class="log-response">💬 Response: ${escapeHTML(log.response)}</div>
-        `;
-        container.appendChild(div);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-public`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message, mode: 'quick' })
       });
-    }
 
-    function escapeHTML(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
 
-    // Initialize the page
-    initializeAnonymousSession().then(() => {
+      const data = await res.json();
+      responseDiv.textContent = data.reply ?? 'No response received.';
+      messageInput.value = '';
       fetchLogs();
+    } catch (err) {
+      console.error('Public function failed:', err);
+      responseDiv.textContent = `Error: ${err.message}. See console for details.`;
+    }
+  });
+
+  async function fetchLogs() {
+    const { data, error } = await supabase
+      .from('glyph_logs')
+      .select('input_message, matched_glyph_id, system_prompt, response, timestamp')
+      .order('timestamp', { ascending: false })
+      .limit(10);
+
+    const container = document.getElementById('logs');
+    container.innerHTML = '';
+
+    if (error) {
+      console.error('Error fetching logs:', error);
+      container.innerHTML = `<div class="error">Failed to load glyph logs. Check console for details.</div>`;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
+      return;
+    }
+
+    data.forEach((log) => {
+      const div = document.createElement('div');
+      div.className = 'log';
+      div.innerHTML = `
+        <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
+        <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
+        <div class="prompt">🧭 User: ${escapeHTML(log.input_message)}</div>
+        <div class="prompt">🧠 Prompt: ${escapeHTML(log.system_prompt)}</div>
+        <div class="log-response">💬 Response: ${escapeHTML(log.response)}</div>
+      `;
+      container.appendChild(div);
     });
-  </script>
+  }
+
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  initializeAnonymousSession().then(fetchLogs);
+</script>
 </body>
 </html>
