@@ -3,269 +3,179 @@
 <head>
   <meta charset="UTF-8" />
   <title>Saori Interface</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0e0e0e;
-      color: #e0e0e0;
+      font-family: sans-serif;
+      background: #f5f5f5;
       padding: 2rem;
-      max-width: 800px;
+      max-width: 600px;
       margin: auto;
     }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      color: #ffd700;
+    h2 {
+      margin-bottom: 1rem;
     }
-    form {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    input[type="text"] {
-      flex: 1;
-      padding: 0.75rem;
-      border-radius: 4px;
-      border: none;
+    textarea, button, select {
+      padding: 0.5rem;
       font-size: 1rem;
-    }
-    button {
-      padding: 0.75rem 1rem;
-      background-color: #6a5acd;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .response {
-      margin-bottom: 2rem;
-      font-size: 1.1rem;
-      color: #e0e0e0;
-      background: #1a1a1a;
-      padding: 1rem;
-      border-left: 4px solid #ffd700;
-      border-radius: 6px;
-    }
-    .log {
-      background: #1a1a1a;
-      border-left: 4px solid #6a5acd;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      border-radius: 6px;
-      box-shadow: 0 0 10px rgba(106, 90, 205, 0.3);
-    }
-    .timestamp {
-      font-size: 0.8rem;
-      color: #aaa;
-      margin-bottom: 0.5rem;
-    }
-    .glyph {
-      font-weight: bold;
-      color: #ffd700;
-      margin-bottom: 0.3rem;
-    }
-    .prompt {
-      font-style: italic;
-      color: #ccc;
-      margin-bottom: 0.5rem;
-    }
-    .log-response {
       margin-top: 0.5rem;
-      color: #e0e0e0;
+      width: 100%;
+      box-sizing: border-box;
     }
-    .error {
-      color: #ff4c4c;
+    #chatLog {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      white-space: pre-wrap;
+      overflow-y: auto;
+      max-height: 400px;
+    }
+    .user {
       font-weight: bold;
-      margin-top: 2rem;
+      margin-top: 1rem;
     }
-    .status {
-      color: #4cff4c;
+    .saori {
+      margin-bottom: 1rem;
+    }
+    #status {
+      font-size: 0.9rem;
+      color: #666;
       margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
-  <h1>Saori Interface</h1>
-  
-  <div id="status" class="status">Initializing Saori interface...</div>
+  <h2>Speak to Saori</h2>
+  <div id="status">Checking login status...</div>
 
-  <form id="chat-form">
-    <input type="text" id="message" placeholder="Speak to Saori..." required />
-    <button type="submit">Send</button>
-  </form>
+  <div id="loginButton">
+    <button onclick="loginWithGoogle()">Login with Google</button>
+  </div>
 
-  <div id="saori-response" class="response" style="display: none;"></div>
+  <div id="logoutButton" style="display:none;">
+    <button onclick="logout()">Logout</button>
+  </div>
 
-  <h2>Saori's Glyph Trail</h2>
-  <div id="logs">Loading glyphs...</div>
+  <div id="saoriInterface" style="display:none;">
+    <select id="mode">
+      <option value="quick">Quick Response</option>
+      <option value="deep">Think Deeper</option>
+      <option value="smart">Smart (GPT-5)</option>
+      <option value="research">Deep Research</option>
+    </select>
 
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    <textarea id="userInput" rows="4" placeholder="Type your message..."></textarea>
+    <button onclick="sendToSaori()">Submit</button>
 
-    const SUPABASE_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
+    <div id="chatLog"></div>
+  </div>
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    const statusDiv = document.getElementById('status');
-    const chatForm = document.getElementById('chat-form');
-    const messageInput = document.getElementById('message');
-    const responseDiv = document.getElementById('saori-response');
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://gyqzyuvuuyfjxnramkfq.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8'
+    );
 
-    // Optional: Sign in anonymously to get a session
-    async function initializeAnonymousSession() {
-      try {
-        statusDiv.textContent = "Initializing anonymous session...";
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (error) {
-          console.error("Anonymous sign-in error:", error.message);
-          statusDiv.textContent = "Warning: Running in limited mode (no authentication)";
-          return false;
+    async function loginWithGoogle() {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://taurinrobinson-wq.github.io/saori-interface'
         }
-        statusDiv.textContent = "Saori is ready";
-        return true;
-      } catch (err) {
-        console.error("Session initialization error:", err);
-        statusDiv.textContent = "Warning: Running in limited mode (no authentication)";
-        return false;
+      });
+      if (error) console.error('Login error:', error.message);
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      document.getElementById('saoriInterface').style.display = 'none';
+      document.getElementById('loginButton').style.display = 'block';
+      document.getElementById('logoutButton').style.display = 'none';
+      document.getElementById('status').textContent = 'Logged out.';
+    }
+
+    async function checkSession() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      const statusEl = document.getElementById('status');
+      if (session) {
+        document.getElementById('saoriInterface').style.display = 'block';
+        document.getElementById('loginButton').style.display = 'none';
+        document.getElementById('logoutButton').style.display = 'block';
+        statusEl.textContent = `Logged in as ${session.user.email}`;
+      } else {
+        document.getElementById('saoriInterface').style.display = 'none';
+        document.getElementById('loginButton').style.display = 'block';
+        document.getElementById('logoutButton').style.display = 'none';
+        statusEl.textContent = 'Not logged in.';
       }
     }
 
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const message = messageInput.value.trim();
+    window.addEventListener('load', async () => {
+      const hash = window.location.hash;
+      if (hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.slice(1));
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({ access_token, refresh_token });
+        }
+        history.replaceState(null, '', window.location.pathname);
+      }
+      await checkSession();
+    });
+
+    async function sendToSaori() {
+      const inputEl = document.getElementById('userInput');
+      const modeEl = document.getElementById('mode');
+      const message = inputEl.value.trim();
+      const mode = modeEl.value;
       if (!message) return;
 
-      responseDiv.style.display = 'none';
-      responseDiv.textContent = 'Saori is listening...';
-      responseDiv.style.display = 'block';
-      
-      // Try multiple approaches to communicate with Saori
-      let success = false;
+      const chatLog = document.getElementById('chatLog');
+      const userMsg = document.createElement('div');
+      userMsg.className = 'user';
+      userMsg.textContent = `You (${mode}): ${message}`;
+      chatLog.appendChild(userMsg);
 
-      // Approach 1: Direct fetch with session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       try {
-        // Get the session to use its JWT token
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/saori`, {
+        const res = await fetch('https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/saori', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
+            'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ message, mode: 'quick' })
+          body: JSON.stringify({ message, mode })
         });
 
-        if (!res.ok) {
-          throw new Error(`HTTP error: ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         const data = await res.json();
-        responseDiv.textContent = data.reply ?? 'No response received.';
-        messageInput.value = '';
-        fetchLogs();
-        success = true;
-      } catch (err) {
-        console.warn("Approach 1 failed:", err.message);
+
+        const saoriMsg = document.createElement('div');
+        saoriMsg.className = 'saori';
+        saoriMsg.textContent = `Saori: ${data.reply || 'No response received.'}`;
+        chatLog.appendChild(saoriMsg);
+
+        inputEl.value = '';
+        chatLog.scrollTop = chatLog.scrollHeight;
+      } catch (error) {
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'saori';
+        errorMsg.textContent = 'Saori could not be reached.';
+        chatLog.appendChild(errorMsg);
+        console.error('Error:', error);
       }
-
-      // Approach 2: Try using the Supabase client functions.invoke method
-      if (!success) {
-        try {
-          const { data, error } = await supabase.functions.invoke('saori', {
-            body: { message, mode: 'quick' }
-          });
-          
-          if (error) throw new Error(error.message);
-          
-          responseDiv.textContent = data.reply ?? 'No response received.';
-          messageInput.value = '';
-          fetchLogs();
-          success = true;
-        } catch (err) {
-          console.warn("Approach 2 failed:", err.message);
-        }
-      }
-
-      // Approach 3: Try direct fetch without authentication (fallback)
-      if (!success) {
-        try {
-          const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-public`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ message, mode: 'quick' })
-          });
-
-          if (!res.ok) {
-            throw new Error(`HTTP error: ${res.status}`);
-          }
-
-          const data = await res.json();
-          responseDiv.textContent = data.reply ?? 'No response received.';
-          messageInput.value = '';
-          fetchLogs();
-          success = true;
-        } catch (err) {
-          console.warn("Approach 3 failed:", err.message);
-          responseDiv.textContent = `Error: ${err.message}. Please check console for details.`;
-        }
-      }
-    });
-
-    async function fetchLogs() {
-      const { data, error } = await supabase
-        .from('glyph_logs')
-        .select('input_message, matched_glyph_id, system_prompt, response, timestamp')
-        .order('timestamp', { ascending: false })
-        .limit(10);
-
-      const container = document.getElementById('logs');
-      container.innerHTML = '';
-
-      if (error) {
-        console.error('Error fetching logs:', error);
-        container.innerHTML = `<div class="error">Failed to load glyph logs. Check console for details.</div>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
-        return;
-      }
-
-      data.forEach(log => {
-        const div = document.createElement('div');
-        div.className = 'log';
-        div.innerHTML = `
-          <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
-          <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
-          <div class="prompt">🧭 User: ${escapeHTML(log.input_message)}</div>
-          <div class="prompt">🧠 Prompt: ${escapeHTML(log.system_prompt)}</div>
-          <div class="log-response">💬 Response: ${escapeHTML(log.response)}</div>
-        `;
-        container.appendChild(div);
-      });
     }
 
-    function escapeHTML(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    // Initialize the page
-    initializeAnonymousSession().then(() => {
-      fetchLogs();
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendToSaori();
+      }
     });
   </script>
 </body>
