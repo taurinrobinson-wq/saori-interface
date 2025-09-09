@@ -157,7 +157,7 @@
 
         const saoriMsg = document.createElement('div');
         saoriMsg.className = 'saori';
-        saoriMsg.textContent = `Saori: ${data.reply || 'No response received.'}`;
+        saoriMsg.textContent = `Saori: ${data.saoriReply || 'No response received.'}`;
         chatLog.appendChild(saoriMsg);
 
         inputEl.value = '';
