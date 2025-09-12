@@ -127,12 +127,14 @@
 
     try {
      const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-fixed`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message, mode: 'quick' })
-      });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+  },
+  body: JSON.stringify({ message, mode: 'quick' })
+});
+
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
