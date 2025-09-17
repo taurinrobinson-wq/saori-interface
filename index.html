@@ -8,8 +8,8 @@
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #0e0e0e;
-      color: #e0e0e0;
+      background-color: #ffffff;
+      color: #333333;
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -19,9 +19,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.5rem 1rem;
-      background-color: #1a1a1a;
-      border-bottom: 1px solid #333;
+      padding: 0.75rem 1rem;
+      background-color: #f5f5f5;
+      border-bottom: 1px solid #ccc;
     }
 
     header select, header label {
@@ -31,18 +31,18 @@
 
     main {
       display: grid;
-      grid-template-columns: 1fr 2fr 2fr;
+      grid-template-columns: 2fr 2fr 2fr;
       grid-template-rows: 1fr 1fr;
       gap: 1px;
       flex-grow: 1;
-      background-color: #333;
+      background-color: #eaeaea;
     }
 
     section {
       padding: 1rem;
       overflow: auto;
-      background-color: #121212;
-      border: 1px solid #333;
+      background-color: #ffffff;
+      border: 1px solid #ddd;
     }
 
     #chat-console { grid-column: 1 / 2; grid-row: 1 / 2; }
@@ -51,12 +51,70 @@
     #edge-functions { grid-column: 3 / 4; grid-row: 2 / 3; }
     #glyph-trail { grid-column: 1 / 4; grid-row: 2 / 3; }
 
+    h2 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: #6a5acd;
+    }
+
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .chat-log {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      margin-bottom: 1rem;
+      background-color: #fdfdfd;
+    }
+
+    .chat-entry {
+      margin-bottom: 0.75rem;
+    }
+
+    .chat-entry.user {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .chat-entry.saori {
+      font-style: italic;
+      color: #6a5acd;
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .chat-input button {
+      padding: 0.5rem 1rem;
+      background-color: #6a5acd;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
     textarea {
       width: 100%;
       height: 100%;
-      background-color: #1e1e1e;
-      color: #e0e0e0;
-      border: none;
+      background-color: #fdfdfd;
+      color: #333;
+      border: 1px solid #ccc;
       resize: none;
       font-family: monospace;
       font-size: 0.9rem;
@@ -71,12 +129,6 @@
 
     .toggle input {
       transform: scale(1.2);
-    }
-
-    h2 {
-      margin-top: 0;
-      font-size: 1rem;
-      color: #ffd700;
     }
   </style>
 </head>
@@ -99,7 +151,15 @@
   <main>
     <section id="chat-console">
       <h2>Chat with Saori</h2>
-      <!-- Chat UI goes here -->
+      <div class="chat-area">
+        <div class="chat-log" id="chat-log">
+          <!-- Chat entries will appear here -->
+        </div>
+        <form class="chat-input" id="chat-form">
+          <input type="text" id="chat-message" placeholder="Speak to Saori..." required />
+          <button type="submit">Send</button>
+        </form>
+      </div>
     </section>
 
     <section id="app-preview">
@@ -122,5 +182,38 @@
       <!-- Glyph log table or visualizer goes here -->
     </section>
   </main>
+
+  <script>
+    const chatForm = document.getElementById('chat-form');
+    const chatLog = document.getElementById('chat-log');
+    const chatInput = document.getElementById('chat-message');
+    const voiceToggle = document.getElementById('voice-toggle');
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      appendChat('user', message);
+      chatInput.value = '';
+
+      // Simulate Saori response (replace with actual fetch logic)
+      const saoriReply = `Saori received: "${message}" and is preparing a glyph...`;
+      appendChat('saori', saoriReply);
+
+      if (voiceToggle.checked) {
+        const utterance = new SpeechSynthesisUtterance(saoriReply);
+        speechSynthesis.speak(utterance);
+      }
+    });
+
+    function appendChat(role, text) {
+      const div = document.createElement('div');
+      div.className = `chat-entry ${role}`;
+      div.textContent = `${role === 'user' ? 'You' : 'Saori'}: ${text}`;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+  </script>
 </body>
 </html>
