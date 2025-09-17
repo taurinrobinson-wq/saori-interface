@@ -5,11 +5,15 @@
   <title>SaoriVerse Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      --pt: 1.333px; /* 1pt ≈ 1.333px */
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background-color: #ffffff;
-      color: #333333;
+      color: #333;
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -19,37 +23,68 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.75rem 1rem;
+      padding: calc(10pt * var(--pt));
       background-color: #f5f5f5;
       border-bottom: 1px solid #ccc;
     }
 
     header select, header label {
-      margin-left: 1rem;
+      margin-left: calc(10pt * var(--pt));
       font-size: 0.9rem;
     }
 
     main {
       display: grid;
-      grid-template-columns: 2fr 2fr 2fr;
-      grid-template-rows: 1fr 1fr;
+      grid-template-columns: 1fr 477px 773px;
+      grid-template-rows: 899px 398px;
       gap: 1px;
       flex-grow: 1;
       background-color: #eaeaea;
     }
 
     section {
-      padding: 1rem;
-      overflow: auto;
+      padding: calc(10pt * var(--pt));
+      overflow: hidden;
       background-color: #ffffff;
       border: 1px solid #ddd;
     }
 
-    #chat-console { grid-column: 1 / 2; grid-row: 1 / 3; }
-    #app-preview { grid-column: 2 / 3; grid-row: 1 / 2; }
-    #code-editor { grid-column: 3 / 4; grid-row: 1 / 2; }
-    #edge-functions { grid-column: 3 / 4; grid-row: 2 / 3; }
-    #glyph-trail { grid-column: 2 / 3; grid-row: 2 / 3; }
+    #chat-console {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app-preview {
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #app-preview-inner {
+      width: 428px;
+      height: 845px;
+      border: 1px solid #ccc;
+      background-color: #fdfdfd;
+    }
+
+    #code-editor {
+      grid-column: 3 / 4;
+      grid-row: 1 / 2;
+    }
+
+    #edge-functions {
+      grid-column: 3 / 4;
+      grid-row: 2 / 3;
+    }
+
+    #glyph-trail {
+      grid-column: 1 / 3;
+      grid-row: 2 / 3;
+    }
 
     h2 {
       margin-top: 0;
@@ -57,23 +92,17 @@
       color: #6a5acd;
     }
 
-    .chat-area {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
     .chat-log {
       flex-grow: 1;
       overflow-y: auto;
-      padding: 0.5rem;
+      padding: calc(8pt * var(--pt));
       border: 1px solid #ccc;
-      margin-bottom: 1rem;
+      margin-bottom: calc(8pt * var(--pt));
       background-color: #fdfdfd;
     }
 
     .chat-entry {
-      margin-bottom: 0.75rem;
+      margin-bottom: calc(6pt * var(--pt));
     }
 
     .chat-entry.user {
@@ -88,19 +117,19 @@
 
     .chat-input {
       display: flex;
-      gap: 0.5rem;
+      gap: calc(6pt * var(--pt));
     }
 
     .chat-input input {
       flex: 1;
-      padding: 0.5rem;
+      padding: calc(6pt * var(--pt));
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
 
     .chat-input button {
-      padding: 0.5rem 1rem;
+      padding: calc(6pt * var(--pt)) calc(12pt * var(--pt));
       background-color: #6a5acd;
       color: white;
       border: none;
@@ -118,13 +147,13 @@
       resize: none;
       font-family: monospace;
       font-size: 0.9rem;
-      padding: 1rem;
+      padding: calc(10pt * var(--pt));
     }
 
     .toggle {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: calc(6pt * var(--pt));
     }
 
     .toggle input {
@@ -151,20 +180,20 @@
   <main>
     <section id="chat-console">
       <h2>Chat with Saori</h2>
-      <div class="chat-area">
-        <div class="chat-log" id="chat-log">
-          <!-- Chat entries will appear here -->
-        </div>
-        <form class="chat-input" id="chat-form">
-          <input type="text" id="chat-message" placeholder="Speak to Saori..." required />
-          <button type="submit">Send</button>
-        </form>
+      <div class="chat-log" id="chat-log">
+        <!-- Chat entries will appear here -->
       </div>
+      <form class="chat-input" id="chat-form">
+        <input type="text" id="chat-message" placeholder="Speak to Saori..." required />
+        <button type="submit">Send</button>
+      </form>
     </section>
 
     <section id="app-preview">
       <h2>App Preview</h2>
-      <!-- Live app rendering goes here -->
+      <div id="app-preview-inner">
+        <!-- Live app rendering goes here -->
+      </div>
     </section>
 
     <section id="code-editor">
@@ -197,7 +226,6 @@
       appendChat('user', message);
       chatInput.value = '';
 
-      // Simulate Saori response (replace with actual fetch logic)
       const saoriReply = `Saori received: "${message}" and is preparing a glyph...`;
       appendChat('saori', saoriReply);
 
