@@ -219,7 +219,8 @@
     trail.innerHTML = '<p>Loading glyph trail...</p>';
 
     try {
-      const { data, error } = await supabase
+      // Alias `data` to `rows` to avoid shadowing/confusion
+      const { data: rows, error } = await supabase
         .from('glyph_logs')
         .select('*')
         .order('timestamp', { ascending: false })
@@ -233,27 +234,25 @@
         return;
       }
 
-      if (!data || data.length === 0) {
+      if (!rows || rows.length === 0) {
         trail.innerHTML = '<p>No glyph logs found. The table may be empty.</p>';
         return;
       }
 
-      // Successfully got data - now render the table (stay inside try so `data` is in scope)
+      // Render stays INSIDE this try so `rows` is in scope
       trail.innerHTML = '<h2>Glyph Trail Archive</h2>';
 
       const table = document.createElement('table');
       table.style.width = '100%';
       table.style.borderCollapse = 'collapse';
 
-      const sampleRow = data[0];
+      const sampleRow = rows[0];
       const availableColumns = Object.keys(sampleRow);
       console.log('Available columns:', availableColumns);
 
       const expectedColumns = ['timestamp', 'input_message', 'response', 'matched_glyph_id'];
       const columnsToShow = expectedColumns.filter(col => availableColumns.includes(col));
-      if (columnsToShow.length === 0) {
-        columnsToShow.push(...availableColumns);
-      }
+      if (columnsToShow.length === 0) columnsToShow.push(...availableColumns);
 
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
@@ -270,31 +269,32 @@
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
-      data.forEach((entry, index) => {
+      rows.forEach((entry, index) => {
         const row = document.createElement('tr');
-        if (index % 2 === 1) {
-          row.style.backgroundColor = '#f9f9f9';
-        }
+        if (index % 2 === 1) row.style.backgroundColor = '#f9f9f9';
+
         columnsToShow.forEach(col => {
           const td = document.createElement('td');
           let value = entry[col];
+
           if (value === null || value === undefined) {
             value = '-';
           } else if (typeof value === 'string' && value.length > 100) {
             value = value.substring(0, 100) + '...';
           } else if (col === 'timestamp' && value) {
-            try {
-              value = new Date(value).toLocaleString();
-            } catch {}
+            try { value = new Date(value).toLocaleString(); } catch {}
           }
+
           td.textContent = value;
           td.style.padding = '8px';
           td.style.borderBottom = '1px solid #eee';
           td.style.verticalAlign = 'top';
           row.appendChild(td);
         });
+
         tbody.appendChild(row);
       });
+
       table.appendChild(tbody);
       trail.appendChild(table);
     } catch (fetchError) {
