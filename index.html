@@ -84,12 +84,24 @@
       color: #4cff4c;
       margin-bottom: 1rem;
     }
+    label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    #voice-toggle {
+      margin-right: 0.5rem;
+    }
   </style>
 </head>
 <body>
   <h1>Saori Interface</h1>
-  
   <div id="status" class="status">Initializing Saori interface...</div>
+
+  <label>
+    <input type="checkbox" id="voice-toggle" checked />
+    🔊 Saori speaks aloud
+  </label>
 
   <form id="chat-form">
     <input type="text" id="message" placeholder="Speak to Saori..." required />
@@ -101,108 +113,109 @@
   <h2>Saori's Glyph Trail</h2>
   <div id="logs">Loading glyphs...</div>
 
-<script type="module">
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  const SUPABASE_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
+    const SUPABASE_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const statusDiv = document.getElementById('status');
-  const chatForm = document.getElementById('chat-form');
-  const messageInput = document.getElementById('message');
-  const responseDiv = document.getElementById('saori-response');
+    const statusDiv = document.getElementById('status');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message');
+    const responseDiv = document.getElementById('saori-response');
+    const voiceToggle = document.getElementById('voice-toggle');
 
-  chatForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const message = messageInput.value.trim();
-    if (!message) return;
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      if (!message) return;
 
-    responseDiv.style.display = 'none';
-    responseDiv.textContent = 'Saori is listening...';
-    responseDiv.style.display = 'block';
+      responseDiv.style.display = 'none';
+      responseDiv.textContent = 'Saori is listening...';
+      responseDiv.style.display = 'block';
 
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-fixed`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ message, mode: 'quick' })
-      });
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-fixed`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ message, mode: 'quick' })
+        });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const data = await res.json();
-      const reply = data.reply ?? 'No response received.';
-      responseDiv.textContent = reply;
-      messageInput.value = '';
+        const data = await res.json();
+        const reply = data.reply ?? 'No response received.';
+        responseDiv.textContent = reply;
+        messageInput.value = '';
 
-      saoriSpeak(reply);
-      fetchLogs();
-    } catch (err) {
-      console.error('Public function failed:', err);
-      responseDiv.textContent = `Error: ${err.message}. See console for details.`;
-    }
-  });
-
-  function saoriSpeak(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = speechSynthesis.getVoices().find(v => v.lang.startsWith('en') && v.name.includes('Google')) || null;
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    speechSynthesis.speak(utterance);
-  }
-
-  async function fetchLogs() {
-    const { data, error } = await supabase
-      .from('glyph_logs')
-      .select('input_message, matched_glyph_id, system_prompt, response, timestamp')
-      .order('timestamp', { ascending: false })
-      .limit(10);
-
-    const container = document.getElementById('logs');
-    container.innerHTML = '';
-
-    if (error) {
-      console.error('Error fetching logs:', error);
-      container.innerHTML = `<div class="error">Failed to load glyph logs. Check console for details.</div>`;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
-      return;
-    }
-
-    data.forEach((log) => {
-      const div = document.createElement('div');
-      div.className = 'log';
-      div.innerHTML = `
-        <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
-        <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
-        <div class="prompt">🧭 User: ${escapeHTML(log.input_message)}</div>
-        <div class="prompt">🧠 Prompt: ${escapeHTML(log.system_prompt)}</div>
-        <div class="log-response">💬 Response: ${escapeHTML(log.response)}</div>
-      `;
-      container.appendChild(div);
+        if (voiceToggle.checked) saoriSpeak(reply);
+        fetchLogs();
+      } catch (err) {
+        console.error('Public function failed:', err);
+        responseDiv.textContent = `Error: ${err.message}. See console for details.`;
+      }
     });
-  }
 
-  function escapeHTML(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
+    function saoriSpeak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = speechSynthesis.getVoices().find(v => v.lang.startsWith('en') && v.name.includes('Google')) || null;
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      speechSynthesis.speak(utterance);
+    }
 
-  statusDiv.textContent = 'Saori is ready';
-  fetchLogs();
-</script>
+    async function fetchLogs() {
+      const { data, error } = await supabase
+        .from('glyph_logs')
+        .select('input_message, matched_glyph_id, system_prompt, response, timestamp')
+        .order('timestamp', { ascending: false })
+        .limit(10);
+
+      const container = document.getElementById('logs');
+      container.innerHTML = '';
+
+      if (error) {
+        console.error('Error fetching logs:', error);
+        container.innerHTML = `<div class="error">Failed to load glyph logs. Check console for details.</div>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
+        return;
+      }
+
+      data.forEach((log) => {
+        const div = document.createElement('div');
+        div.className = 'log';
+        div.innerHTML = `
+          <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
+          <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
+          <div class="prompt">🧭 User: ${escapeHTML(log.input_message)}</div>
+          <div class="prompt">🧠 Prompt: ${escapeHTML(log.system_prompt)}</div>
+          <div class="log-response">💬 Response: ${escapeHTML(log.response)}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    statusDiv.textContent = 'Saori is ready';
+    fetchLogs();
+  </script>
 </body>
 </html>
