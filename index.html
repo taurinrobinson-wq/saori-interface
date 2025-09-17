@@ -175,7 +175,7 @@
       </select>
     </div>
     <label class="toggle">
-      <input type="checkbox" id="voice-toggle" unchecked />
+      <input type="checkbox" id="voice-toggle" checked />
       🔊 Saori speaks aloud
     </label>
   </header>
@@ -214,10 +214,10 @@
   </section>
 
   <script>
-    const EDGE_FUNCTION_URL = 'https://your-project-id.functions.supabase.co/saori-fixed'; // Replace with your actual URL
+    const EDGE_FUNCTION_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co/functions/v1/saori-fixed'; // Replace with your actual URL
     const supabase = window.supabase.createClient(
-      'https://your-project-id.supabase.co', // Replace with your Supabase URL
-      'your-public-anon-key' // Replace with your public anon key
+      'https://gyqzyuvuuyfjxnramkfq.supabase.co', // Replace with your Supabase URL
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8' // Replace with your public anon key
     );
 
     const chatForm = document.getElementById('chat-form');
