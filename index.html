@@ -114,8 +114,6 @@
   const messageInput = document.getElementById('message');
   const responseDiv = document.getElementById('saori-response');
 
-  
-
   chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = messageInput.value.trim();
@@ -126,29 +124,37 @@
     responseDiv.style.display = 'block';
 
     try {
-     const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-fixed`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-  },
-  body: JSON.stringify({ message, mode: 'quick' })
-});
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-fixed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ message, mode: 'quick' })
+      });
 
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      responseDiv.textContent = data.reply ?? 'No response received.';
+      const reply = data.reply ?? 'No response received.';
+      responseDiv.textContent = reply;
       messageInput.value = '';
+
+      saoriSpeak(reply);
       fetchLogs();
     } catch (err) {
       console.error('Public function failed:', err);
       responseDiv.textContent = `Error: ${err.message}. See console for details.`;
     }
   });
+
+  function saoriSpeak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice = speechSynthesis.getVoices().find(v => v.lang.startsWith('en') && v.name.includes('Google')) || null;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    speechSynthesis.speak(utterance);
+  }
 
   async function fetchLogs() {
     const { data, error } = await supabase
@@ -196,7 +202,7 @@
   }
 
   statusDiv.textContent = 'Saori is ready';
-fetchLogs();
+  fetchLogs();
 </script>
 </body>
 </html>
