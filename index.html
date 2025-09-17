@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>SaoriVerse Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -24,11 +25,6 @@
       background-color: #f5f5f5;
       border-bottom: 1px solid #ccc;
       flex-shrink: 0;
-    }
-
-    header select, header label {
-      margin-left: 12px;
-      font-size: 0.9rem;
     }
 
     .main-grid {
@@ -188,9 +184,7 @@
     <section id="chat-console">
       <h2>Chat with Saori</h2>
       <div class="chat-area">
-        <div class="chat-log" id="chat-log">
-          <!-- Chat entries will appear here -->
-        </div>
+        <div class="chat-log" id="chat-log"></div>
         <form class="chat-input" id="chat-form">
           <textarea id="chat-message" rows="1" placeholder="Speak to Saori..." required></textarea>
           <button type="submit">Send</button>
@@ -200,9 +194,7 @@
 
     <section id="app-preview">
       <h2>App Preview</h2>
-      <div id="app-preview-inner">
-        <!-- Live app rendering goes here -->
-      </div>
+      <div id="app-preview-inner"></div>
     </section>
 
     <section>
@@ -219,10 +211,15 @@
 
   <section id="glyph-trail">
     <h2>Glyph Trail Archive</h2>
-    <!-- Glyph log table or visualizer goes here -->
   </section>
 
   <script>
+    const EDGE_FUNCTION_URL = 'https://your-project-id.functions.supabase.co/saori-fixed'; // Replace with your actual URL
+    const supabase = window.supabase.createClient(
+      'https://your-project-id.supabase.co', // Replace with your Supabase URL
+      'your-public-anon-key' // Replace with your public anon key
+    );
+
     const chatForm = document.getElementById('chat-form');
     const chatLog = document.getElementById('chat-log');
     const chatInput = document.getElementById('chat-message');
@@ -237,12 +234,27 @@
       chatInput.value = '';
       chatInput.style.height = 'auto';
 
-      const saoriReply = `Saori received: "${message}" and is preparing a glyph...`;
-      appendChat('saori', saoriReply);
+      try {
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            mode: document.getElementById('mode-switcher').value
+          })
+        });
 
-      if (voiceToggle.checked) {
-        const utterance = new SpeechSynthesisUtterance(saoriReply);
-        speechSynthesis.speak(utterance);
+        const data = await response.json();
+        const reply = data.reply || 'No response received.';
+        appendChat('saori', reply);
+        if (voiceToggle.checked) {
+          const utterance = new SpeechSynthesisUtterance(reply);
+          speechSynthesis.speak(utterance);
+        }
+        await loadGlyphTrail();
+      } catch (err) {
+        appendChat('saori', 'Error contacting backend.');
+        console.error('Edge Function Error:', err);
       }
     });
 
@@ -258,6 +270,24 @@
       chatLog.appendChild(div);
       chatLog.scrollTop = chatLog.scrollHeight;
     }
-  </script>
-</body>
-</html>
+
+    async function loadGlyphTrail() {
+      const { data, error } = await supabase
+        .from('glyph_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(20);
+
+      const trail = document.getElementById('glyph-trail');
+      trail.innerHTML = '';
+
+      if (error || !data) {
+        trail.innerHTML = '<p>Error loading glyph trail.</p>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+
+      const headers = ['Timestamp',
