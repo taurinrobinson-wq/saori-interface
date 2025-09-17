@@ -2,220 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Saori Interface</title>
+  <title>SaoriVerse Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
+      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #0e0e0e;
+      background-color: #0e0e0e;
       color: #e0e0e0;
-      padding: 2rem;
-      max-width: 800px;
-      margin: auto;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      color: #ffd700;
-    }
-    form {
       display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
+      flex-direction: column;
+      height: 100vh;
     }
-    input[type="text"] {
-      flex: 1;
-      padding: 0.75rem;
-      border-radius: 4px;
-      border: none;
-      font-size: 1rem;
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      background-color: #1a1a1a;
+      border-bottom: 1px solid #333;
     }
-    button {
-      padding: 0.75rem 1rem;
-      background-color: #6a5acd;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
+
+    header select, header label {
+      margin-left: 1rem;
+      font-size: 0.9rem;
     }
-    .response {
-      margin-bottom: 2rem;
-      font-size: 1.1rem;
-      color: #e0e0e0;
-      background: #1a1a1a;
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 2fr 2fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 1px;
+      flex-grow: 1;
+      background-color: #333;
+    }
+
+    section {
       padding: 1rem;
-      border-left: 4px solid #ffd700;
-      border-radius: 6px;
+      overflow: auto;
+      background-color: #121212;
+      border: 1px solid #333;
     }
-    .log {
-      background: #1a1a1a;
-      border-left: 4px solid #6a5acd;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      border-radius: 6px;
-      box-shadow: 0 0 10px rgba(106, 90, 205, 0.3);
-    }
-    .timestamp {
-      font-size: 0.8rem;
-      color: #aaa;
-      margin-bottom: 0.5rem;
-    }
-    .glyph {
-      font-weight: bold;
-      color: #ffd700;
-      margin-bottom: 0.3rem;
-    }
-    .prompt {
-      font-style: italic;
-      color: #ccc;
-      margin-bottom: 0.5rem;
-    }
-    .log-response {
-      margin-top: 0.5rem;
+
+    #chat-console { grid-column: 1 / 2; grid-row: 1 / 2; }
+    #app-preview { grid-column: 2 / 3; grid-row: 1 / 2; }
+    #code-editor { grid-column: 3 / 4; grid-row: 1 / 2; }
+    #edge-functions { grid-column: 3 / 4; grid-row: 2 / 3; }
+    #glyph-trail { grid-column: 1 / 4; grid-row: 2 / 3; }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      background-color: #1e1e1e;
       color: #e0e0e0;
+      border: none;
+      resize: none;
+      font-family: monospace;
+      font-size: 0.9rem;
+      padding: 1rem;
     }
-    .error {
-      color: #ff4c4c;
-      font-weight: bold;
-      margin-top: 2rem;
-    }
-    .status {
-      color: #4cff4c;
-      margin-bottom: 1rem;
-    }
-    label {
+
+    .toggle {
       display: flex;
       align-items: center;
-      margin-bottom: 1rem;
+      gap: 0.5rem;
     }
-    #voice-toggle {
-      margin-right: 0.5rem;
+
+    .toggle input {
+      transform: scale(1.2);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: #ffd700;
     }
   </style>
 </head>
 <body>
-  <h1>Saori Interface</h1>
-  <div id="status" class="status">Initializing Saori interface...</div>
+  <header>
+    <div>
+      <strong>SaoriVerse Console</strong>
+      <select id="mode-switcher">
+        <option value="threshold">Threshold App</option>
+        <option value="legal">Legal App</option>
+        <option value="voltage">Voltage Chat</option>
+      </select>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="voice-toggle" checked />
+      🔊 Saori speaks aloud
+    </label>
+  </header>
 
-  <label>
-    <input type="checkbox" id="voice-toggle" checked />
-    🔊 Saori speaks aloud
-  </label>
+  <main>
+    <section id="chat-console">
+      <h2>Chat with Saori</h2>
+      <!-- Chat UI goes here -->
+    </section>
 
-  <form id="chat-form">
-    <input type="text" id="message" placeholder="Speak to Saori..." required />
-    <button type="submit">Send</button>
-  </form>
+    <section id="app-preview">
+      <h2>App Preview</h2>
+      <!-- Live app rendering goes here -->
+    </section>
 
-  <div id="saori-response" class="response" style="display: none;"></div>
+    <section id="code-editor">
+      <h2>HTML + JS Editor</h2>
+      <textarea placeholder="Write or revise frontend code here..."></textarea>
+    </section>
 
-  <h2>Saori's Glyph Trail</h2>
-  <div id="logs">Loading glyphs...</div>
+    <section id="edge-functions">
+      <h2>Supabase Edge Functions</h2>
+      <textarea placeholder="Edit backend logic, glyph processors, etc..."></textarea>
+    </section>
 
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-    const SUPABASE_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const statusDiv = document.getElementById('status');
-    const chatForm = document.getElementById('chat-form');
-    const messageInput = document.getElementById('message');
-    const responseDiv = document.getElementById('saori-response');
-    const voiceToggle = document.getElementById('voice-toggle');
-
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const message = messageInput.value.trim();
-      if (!message) return;
-
-      responseDiv.style.display = 'none';
-      responseDiv.textContent = 'Saori is listening...';
-      responseDiv.style.display = 'block';
-
-      try {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/saori-fixed`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ message, mode: 'quick' })
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = await res.json();
-        const reply = data.reply ?? 'No response received.';
-        responseDiv.textContent = reply;
-        messageInput.value = '';
-
-        if (voiceToggle.checked) saoriSpeak(reply);
-        fetchLogs();
-      } catch (err) {
-        console.error('Public function failed:', err);
-        responseDiv.textContent = `Error: ${err.message}. See console for details.`;
-      }
-    });
-
-    function saoriSpeak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = speechSynthesis.getVoices().find(v => v.lang.startsWith('en') && v.name.includes('Google')) || null;
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      speechSynthesis.speak(utterance);
-    }
-
-    async function fetchLogs() {
-      const { data, error } = await supabase
-        .from('glyph_logs')
-        .select('input_message, matched_glyph_id, system_prompt, response, timestamp')
-        .order('timestamp', { ascending: false })
-        .limit(10);
-
-      const container = document.getElementById('logs');
-      container.innerHTML = '';
-
-      if (error) {
-        console.error('Error fetching logs:', error);
-        container.innerHTML = `<div class="error">Failed to load glyph logs. Check console for details.</div>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        container.innerHTML = `<div class="error">No glyphs found yet. Saori awaits invocation.</div>`;
-        return;
-      }
-
-      data.forEach((log) => {
-        const div = document.createElement('div');
-        div.className = 'log';
-        div.innerHTML = `
-          <div class="timestamp">🕰 ${new Date(log.timestamp).toLocaleString()}</div>
-          <div class="glyph">🔮 Glyph ID: ${log.matched_glyph_id ?? 'None'}</div>
-          <div class="prompt">🧭 User: ${escapeHTML(log.input_message)}</div>
-          <div class="prompt">🧠 Prompt: ${escapeHTML(log.system_prompt)}</div>
-          <div class="log-response">💬 Response: ${escapeHTML(log.response)}</div>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function escapeHTML(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    statusDiv.textContent = 'Saori is ready';
-    fetchLogs();
-  </script>
+    <section id="glyph-trail">
+      <h2>Glyph Trail Archive</h2>
+      <!-- Glyph log table or visualizer goes here -->
+    </section>
+  </main>
 </body>
 </html>
