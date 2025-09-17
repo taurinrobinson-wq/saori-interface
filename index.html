@@ -214,12 +214,88 @@
   </section>
 
 <script>
+  // 1) Configure Supabase and Edge Function
+  const SUPABASE_URL = 'https://gyqzyuvuuyfjxnramkfq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp5dXZ1dXlmanhucmFta2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NjcyMDAsImV4cCI6MjA3MTA0MzIwMH0.4SpC34q7lcURBX4hujkTGqICdSM6ZWASCENnRs5rkS8';
+
+  // Use the public, CORS-friendly function
+  const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/saori-public`;
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // 2) DOM references
+  const chatForm = document.getElementById('chat-form');
+  const chatLog = document.getElementById('chat-log');
+  const chatInput = document.getElementById('chat-message');
+  const voiceToggle = document.getElementById('voice-toggle');
+  const modeSelect = document.getElementById('mode-switcher');
+
+  // 3) Chat helpers
+  function appendChat(role, text) {
+    const div = document.createElement('div');
+    div.className = `chat-entry ${role}`;
+    div.textContent = `${role === 'user' ? 'You' : 'Saori'}: ${text}`;
+    chatLog.appendChild(div);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  // 4) Send message -> Edge Function
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    appendChat('user', message);
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+
+    try {
+      const res = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+          // No Authorization needed for saori-public (verify_jwt=false)
+        },
+        body: JSON.stringify({
+          message,
+          mode: modeSelect.value
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      console.log('Edge Function status:', res.status, 'payload:', data);
+
+      if (!res.ok) {
+        appendChat('saori', `Error: ${data.error || data.message || 'Backend error'}`);
+        return;
+      }
+
+      const reply = data.reply || data.saoriReply || 'No response received.';
+      appendChat('saori', reply);
+
+      if (voiceToggle.checked) {
+        const utterance = new SpeechSynthesisUtterance(reply);
+        speechSynthesis.speak(utterance);
+      }
+
+      await loadGlyphTrail();
+    } catch (err) {
+      console.error('Edge Function Error:', err);
+      appendChat('saori', 'Error contacting backend.');
+    }
+  });
+
+  // 5) Auto-resize textarea
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = chatInput.scrollHeight + 'px';
+  });
+
+  // 6) Glyph trail (your fixed version)
   async function loadGlyphTrail() {
     const trail = document.getElementById('glyph-trail');
     trail.innerHTML = '<p>Loading glyph trail...</p>';
 
     try {
-      // Alias `data` to `rows` to avoid shadowing/confusion
       const { data: rows, error } = await supabase
         .from('glyph_logs')
         .select('*')
@@ -228,9 +304,11 @@
 
       if (error) {
         console.error('Supabase error:', error);
-        trail.innerHTML = `<p>Database error: ${error.message}</p>
-                           <p>Details: ${error.details || 'No additional details'}</p>
-                           <p>Hint: ${error.hint || 'Check table name and permissions'}</p>`;
+        trail.innerHTML = `
+          <p>Database error: ${error.message}</p>
+          <p>Details: ${error.details || 'No additional details'}</p>
+          <p>Hint: ${error.hint || 'Check table name and permissions'}</p>
+        `;
         return;
       }
 
@@ -239,69 +317,51 @@
         return;
       }
 
-      // Render stays INSIDE this try so `rows` is in scope
       trail.innerHTML = '<h2>Glyph Trail Archive</h2>';
-
       const table = document.createElement('table');
       table.style.width = '100%';
       table.style.borderCollapse = 'collapse';
 
       const sampleRow = rows[0];
       const availableColumns = Object.keys(sampleRow);
-      console.log('Available columns:', availableColumns);
-
       const expectedColumns = ['timestamp', 'input_message', 'response', 'matched_glyph_id'];
       const columnsToShow = expectedColumns.filter(col => availableColumns.includes(col));
-      if (columnsToShow.length === 0) columnsToShow.push(...availableColumns);
 
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
-      columnsToShow.forEach(col => {
+      columnsToShow.forEach(h => {
         const th = document.createElement('th');
-        th.textContent = col.replace(/_/g, ' ').toUpperCase();
+        th.textContent = h;
         th.style.borderBottom = '1px solid #ccc';
-        th.style.padding = '8px';
-        th.style.textAlign = 'left';
-        th.style.backgroundColor = '#f5f5f5';
+        th.style.padding = '4px';
         headerRow.appendChild(th);
       });
       thead.appendChild(headerRow);
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
-      rows.forEach((entry, index) => {
+      rows.forEach(entry => {
         const row = document.createElement('tr');
-        if (index % 2 === 1) row.style.backgroundColor = '#f9f9f9';
-
         columnsToShow.forEach(col => {
           const td = document.createElement('td');
-          let value = entry[col];
-
-          if (value === null || value === undefined) {
-            value = '-';
-          } else if (typeof value === 'string' && value.length > 100) {
-            value = value.substring(0, 100) + '...';
-          } else if (col === 'timestamp' && value) {
-            try { value = new Date(value).toLocaleString(); } catch {}
-          }
-
-          td.textContent = value;
-          td.style.padding = '8px';
+          td.textContent = entry[col];
+          td.style.padding = '4px';
           td.style.borderBottom = '1px solid #eee';
-          td.style.verticalAlign = 'top';
           row.appendChild(td);
         });
-
         tbody.appendChild(row);
       });
 
       table.appendChild(tbody);
       trail.appendChild(table);
-    } catch (fetchError) {
-      console.error('Network/connection error:', fetchError);
-      trail.innerHTML = '<p>Connection error. Check your internet connection and Supabase configuration.</p>';
+    } catch (err) {
+      console.error('Glyph trail load error:', err);
+      trail.innerHTML = '<p>Unexpected error loading glyph trail.</p>';
     }
   }
+
+  window.addEventListener('DOMContentLoaded', loadGlyphTrail);
 </script>
+  
 </body>
 </html>
