@@ -251,16 +251,15 @@
 
     try {
       const res = await fetch(EDGE_FUNCTION_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-          // No Authorization needed for saori-public (verify_jwt=false)
-        },
-        body: JSON.stringify({
-          message,
-          mode: modeSelect.value
-        })
-      });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    message,
+    mode: modeSelect.value
+  })
+});
 
       const data = await res.json().catch(() => ({}));
       console.log('Edge Function status:', res.status, 'payload:', data);
