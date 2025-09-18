@@ -222,6 +222,15 @@
   const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/saori-fixed`;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 async function loadGlyphTrail() {
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    console.warn('🧪 No session found—glyph trail will not load.');
+    return;
+  }
+
   const { data, error } = await supabase
     .from('glyph_trail')
     .select('*')
@@ -233,7 +242,8 @@ async function loadGlyphTrail() {
   }
 
   const trailSection = document.getElementById('glyph-trail');
-  trailSection.innerHTML = '<h2>Glyph Trail Archive</h2>' + 
+  trailSection.innerHTML =
+    '<h2>Glyph Trail Archive</h2>' +
     data.map(entry => `<div>${entry.message}</div>`).join('');
 }
   // 2) DOM references
@@ -278,9 +288,7 @@ if (!session || !session.access_token) {
   return;
 }
 
-const accessToken = session.access_token;
-
-  const accessToken = session?.access_token;
+const accessToken = session?.access_token;
 
   const res = await fetch(EDGE_FUNCTION_URL, {
     method: 'POST',
