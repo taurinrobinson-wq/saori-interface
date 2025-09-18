@@ -249,119 +249,44 @@
     chatInput.value = '';
     chatInput.style.height = 'auto';
 
-    try {
-      const res = await fetch(EDGE_FUNCTION_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    message,
-    mode: modeSelect.value
-  })
-});
+try {
+  // Get the current user's session token
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
 
-      const data = await res.json().catch(() => ({}));
-      console.log('Edge Function status:', res.status, 'payload:', data);
+  const accessToken = session?.access_token;
 
-      if (!res.ok) {
-        appendChat('saori', `Error: ${data.error || data.message || 'Backend error'}`);
-        return;
-      }
-
-      const reply = data.reply || data.saoriReply || 'No response received.';
-      appendChat('saori', reply);
-
-      if (voiceToggle.checked) {
-        const utterance = new SpeechSynthesisUtterance(reply);
-        speechSynthesis.speak(utterance);
-      }
-
-      await loadGlyphTrail();
-    } catch (err) {
-      console.error('Edge Function Error:', err);
-      appendChat('saori', 'Error contacting backend.');
-    }
+  const res = await fetch(EDGE_FUNCTION_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    },
+    body: JSON.stringify({
+      message,
+      mode: modeSelect.value
+    })
   });
 
-  // 5) Auto-resize textarea
-  chatInput.addEventListener('input', () => {
-    chatInput.style.height = 'auto';
-    chatInput.style.height = chatInput.scrollHeight + 'px';
-  });
+  const data = await res.json().catch(() => ({}));
+  console.log('Edge Function status:', res.status, 'payload:', data);
 
-  // 6) Glyph trail (your fixed version)
-  async function loadGlyphTrail() {
-    const trail = document.getElementById('glyph-trail');
-    trail.innerHTML = '<p>Loading glyph trail...</p>';
-
-    try {
-      const { data: rows, error } = await supabase
-        .from('glyph_logs')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Supabase error:', error);
-        trail.innerHTML = `
-          <p>Database error: ${error.message}</p>
-          <p>Details: ${error.details || 'No additional details'}</p>
-          <p>Hint: ${error.hint || 'Check table name and permissions'}</p>
-        `;
-        return;
-      }
-
-      if (!rows || rows.length === 0) {
-        trail.innerHTML = '<p>No glyph logs found. The table may be empty.</p>';
-        return;
-      }
-
-      trail.innerHTML = '<h2>Glyph Trail Archive</h2>';
-      const table = document.createElement('table');
-      table.style.width = '100%';
-      table.style.borderCollapse = 'collapse';
-
-      const sampleRow = rows[0];
-      const availableColumns = Object.keys(sampleRow);
-      const expectedColumns = ['timestamp', 'input_message', 'response', 'matched_glyph_id'];
-      const columnsToShow = expectedColumns.filter(col => availableColumns.includes(col));
-
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-      columnsToShow.forEach(h => {
-        const th = document.createElement('th');
-        th.textContent = h;
-        th.style.borderBottom = '1px solid #ccc';
-        th.style.padding = '4px';
-        headerRow.appendChild(th);
-      });
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      rows.forEach(entry => {
-        const row = document.createElement('tr');
-        columnsToShow.forEach(col => {
-          const td = document.createElement('td');
-          td.textContent = entry[col];
-          td.style.padding = '4px';
-          td.style.borderBottom = '1px solid #eee';
-          row.appendChild(td);
-        });
-        tbody.appendChild(row);
-      });
-
-      table.appendChild(tbody);
-      trail.appendChild(table);
-    } catch (err) {
-      console.error('Glyph trail load error:', err);
-      trail.innerHTML = '<p>Unexpected error loading glyph trail.</p>';
-    }
+  if (!res.ok) {
+    appendChat('saori', `Error: ${data.error || data.message || 'Backend error'}`);
+    return;
   }
 
-  window.addEventListener('DOMContentLoaded', loadGlyphTrail);
-</script>
-  
-</body>
-</html>
+  const reply = data.reply || data.saoriReply || 'No response received.';
+  appendChat('saori', reply);
+
+  if (voiceToggle.checked) {
+    const utterance = new SpeechSynthesisUtterance(reply);
+    speechSynthesis.speak(utterance);
+  }
+
+  await loadGlyphTrail();
+} catch (err) {
+  console.error('Edge Function Error:', err);
+  appendChat('saori', 'Error contacting backend.');
+}
