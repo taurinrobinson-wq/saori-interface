@@ -221,7 +221,21 @@
   // Use the public, CORS-friendly function
   const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/saori-fixed`;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+async function loadGlyphTrail() {
+  const { data, error } = await supabase
+    .from('glyph_trail')
+    .select('*')
+    .order('created_at', { ascending: false });
 
+  if (error) {
+    console.error('Glyph trail error:', error);
+    return;
+  }
+
+  const trailSection = document.getElementById('glyph-trail');
+  trailSection.innerHTML = '<h2>Glyph Trail Archive</h2>' + 
+    data.map(entry => `<div>${entry.message}</div>`).join('');
+}
   // 2) DOM references
   const chatForm = document.getElementById('chat-form');
   const chatLog = document.getElementById('chat-log');
@@ -229,7 +243,11 @@
   const voiceToggle = document.getElementById('voice-toggle');
   voiceToggle.checked = false;
   const modeSelect = document.getElementById('mode-switcher');
-
+modeSelect.addEventListener('change', () => {
+  const mode = modeSelect.value;
+  const preview = document.getElementById('app-preview-inner');
+  preview.innerHTML = `<div style="padding:2rem;">Rendering: ${mode}</div>`;
+});
   // 3) Chat helpers
   function appendChat(role, text) {
     const div = document.createElement('div');
@@ -252,8 +270,15 @@
 try {
   // Get the current user's session token
   const {
-    data: { session }
-  } = await supabase.auth.getSession();
+  data: { session }
+} = await supabase.auth.getSession();
+
+if (!session || !session.access_token) {
+  appendChat('saori', 'No active session. Please sign in to continue.');
+  return;
+}
+
+const accessToken = session.access_token;
 
   const accessToken = session?.access_token;
 
@@ -280,10 +305,10 @@ try {
   const reply = data.reply || data.saoriReply || 'No response received.';
   appendChat('saori', reply);
 
-  if (voiceToggle.checked) {
-    const utterance = new SpeechSynthesisUtterance(reply);
-    speechSynthesis.speak(utterance);
-  }
+ if (voiceToggle.checked && 'speechSynthesis' in window) {
+  const utterance = new SpeechSynthesisUtterance(reply);
+  speechSynthesis.speak(utterance);
+}
 
   await loadGlyphTrail();
 } catch (err) {
